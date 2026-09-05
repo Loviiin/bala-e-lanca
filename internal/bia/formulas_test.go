@@ -21,7 +21,7 @@ func TestCalculate_CasoRealista(t *testing.T) {
 
 	m := Calculate(Input{
 		WeightKg:     99.40,
-		ImpedanceOhm: 600.0,
+		ImpedanceOhm: 500.0,
 		Profile:      p,
 	})
 

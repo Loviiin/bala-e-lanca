@@ -17,22 +17,22 @@ func TestDecode_ValoresReaisCapturados(t *testing.T) {
 			name:         "idle - ninguém na balança",
 			payload:      []byte{0x00, 0x00, 0x17, 0x70, 0x0A, 0x01, 0x24, 0xA8, 0x0B, 0x6B, 0x77, 0x98, 0xC7},
 			wantWeight:   0.0,
-			wantImpedanc: 6000.0 / 10, // 0x1770 = 6000 -> /10 = 600.0
-			wantHasImp:   true,
+			wantImpedanc: 0.0,
+			wantHasImp:   false,
 		},
 		{
 			name:         "1a pesagem travada (99.40kg, bom contato)",
 			payload:      []byte{0x26, 0xD4, 0x17, 0x70, 0x0A, 0x01, 0x25, 0xA8, 0x0B, 0x6B, 0x77, 0x98, 0xC7},
 			wantWeight:   99.40,
-			wantImpedanc: 600.0,
-			wantHasImp:   true,
+			wantImpedanc: 0.0,
+			wantHasImp:   false,
 		},
 		{
 			name:         "2a pesagem travada (53.30kg, bom contato)",
 			payload:      []byte{0x14, 0xD2, 0x17, 0x70, 0x0A, 0x01, 0x24, 0xA8, 0x0B, 0x6B, 0x77, 0x98, 0xC7},
 			wantWeight:   53.30,
-			wantImpedanc: 600.0,
-			wantHasImp:   true,
+			wantImpedanc: 0.0,
+			wantHasImp:   false,
 		},
 		{
 			name:         "3a pesagem travada (42.10kg, SEM contato nos eletrodos)",

@@ -10,7 +10,7 @@
 // payload (13 bytes):
 //
 //	[0:2]  peso bruto, big-endian, kg * 100
-//	[2:4]  impedância bruta, big-endian, ohms * 10 (0x0000 = não medida)
+//	[2:4]  campo de impedância/status, big-endian, ohms * 10
 //	[4:6]  constante fixa de protocolo (0x0A, 0x01) — ignorado
 //	[6]    contador/sequência — ignorado por enquanto
 //	[7:13] MAC do próprio dispositivo, espelhado — ignorado
@@ -28,6 +28,11 @@ import (
 // projetos (19 bytes) não bate com essa balança (13 bytes).
 const PayloadLen = 13
 
+// ImpedanceUnavailableRaw é o valor fixo 0x1770 observado no broadcast
+// desta balança. Ele aparece tanto em leituras com peso quanto em idle,
+// então não representa uma impedância medida.
+const ImpedanceUnavailableRaw = 0x1770
+
 var ErrUnexpectedLength = errors.New("ble: payload com tamanho inesperado, não é um pacote OKOK reconhecido")
 
 // Reading é uma leitura decodificada de um advertisement da balança.
@@ -40,9 +45,9 @@ type Reading struct {
 // Decode extrai peso e impedância de um payload de manufacturer data.
 //
 // weight = payload[0:2] / 100.0
-// impedance = payload[2:4] / 10.0 (0 quando a balança não completou a
-// medição de bioimpedância — normalmente por falta de contato nos
-// eletrodos, ou porque a leitura ainda está instável)
+// impedance = payload[2:4] / 10.0 quando o campo contém uma medida real.
+// Zero e 0x1770 significam que a impedância não está disponível no
+// broadcast passivo deste modelo.
 func Decode(payload []byte) (Reading, error) {
 	if len(payload) != PayloadLen {
 		return Reading{}, ErrUnexpectedLength
@@ -50,10 +55,15 @@ func Decode(payload []byte) (Reading, error) {
 
 	weightRaw := binary.BigEndian.Uint16(payload[0:2])
 	impedanceRaw := binary.BigEndian.Uint16(payload[2:4])
+	hasImpedance := impedanceRaw != 0 && impedanceRaw != ImpedanceUnavailableRaw
+	impedanceOhm := 0.0
+	if hasImpedance {
+		impedanceOhm = float64(impedanceRaw) / 10.0
+	}
 
 	return Reading{
 		WeightKg:     float64(weightRaw) / 100.0,
-		ImpedanceOhm: float64(impedanceRaw) / 10.0,
-		HasImpedance: impedanceRaw != 0,
+		ImpedanceOhm: impedanceOhm,
+		HasImpedance: hasImpedance,
 	}, nil
 }
