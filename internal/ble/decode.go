@@ -56,14 +56,9 @@ func Decode(payload []byte) (Reading, error) {
 	weightRaw := binary.BigEndian.Uint16(payload[0:2])
 	impedanceRaw := binary.BigEndian.Uint16(payload[2:4])
 	hasImpedance := impedanceRaw != 0 && impedanceRaw != ImpedanceUnavailableRaw
-	impedanceOhm := 0.0
-	if hasImpedance {
-		impedanceOhm = float64(impedanceRaw) / 10.0
-	}
-
 	return Reading{
 		WeightKg:     float64(weightRaw) / 100.0,
-		ImpedanceOhm: impedanceOhm,
+		ImpedanceOhm: float64(impedanceRaw) / 10.0,
 		HasImpedance: hasImpedance,
 	}, nil
 }

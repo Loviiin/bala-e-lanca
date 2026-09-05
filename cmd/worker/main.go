@@ -54,9 +54,14 @@ func main() {
 			p = &profile.Profile{Name: "nao-identificado", Height: 170, Age: 30, Sex: profile.Male}
 		}
 
+		impedance := r.ImpedanceOhm
+		if !r.HasImpedance {
+			impedance = 0
+		}
+
 		metrics := bia.Calculate(bia.Input{
 			WeightKg:     r.WeightKg,
-			ImpedanceOhm: r.ImpedanceOhm,
+			ImpedanceOhm: impedance,
 			Profile:      *p,
 		})
 
