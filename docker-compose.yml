@@ -68,7 +68,13 @@ services:
       - .env.livesync
     volumes:
       - /home/loviin/obsidian-vault:/vault
-    command:
-      - sh
-      - -c
-      - npx --yes obsidian-git-livesync watch /vault
+    command: >-
+      sh -c 'node -e "require(\"fs\").writeFileSync(\"/tmp/livesync.json\", JSON.stringify({
+      couchdbUrl: process.env.COUCHDB_URL,
+      couchdbUser: process.env.COUCHDB_USER,
+      couchdbPassword: process.env.COUCHDB_PASSWORD,
+      couchdbDatabase: process.env.COUCHDB_DATABASE,
+      vaultRoot: process.env.VAULT_ROOT,
+      extensions: [\".md\"],
+      debounce: 200
+      }))" && npx --yes obsidian-git-livesync --config /tmp/livesync.json watch /vault'
