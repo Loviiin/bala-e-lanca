@@ -37,6 +37,7 @@ services:
     labels:
       # Habilita esse container especificamente pro Watchtower vigiar.
       - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=bala-e-lanca"
 
   watchtower:
     image: containrrr/watchtower:1.7.1
@@ -54,4 +55,6 @@ services:
       - "--interval"
       - "300" # checa a cada 5 minutos
       - "--label-enable" # só atualiza containers com o label acima
+      - "--scope"
+      - "bala-e-lanca"
       - "--cleanup" # apaga a imagem antiga depois de atualizar
