@@ -1,0 +1,19 @@
+# Copie esse arquivo pra config.yaml e ajuste com os dados reais.
+# expected_weight_kg = sua última leitura estável conhecida — usado só
+# pra identificação automática de quem subiu na balança.
+profiles:
+  - name: "Voce"
+    sex: "M" # "M" ou "F"
+    age: 30
+    height_cm: 175
+    expected_weight_kg: 98.0
+    tolerance_kg: 4.0
+    # waist_cm: 90    # opcional, só pra métricas tier 2 (RCQ etc)
+    # hip_cm: 100     # opcional
+
+  - name: "Parceiro(a)"
+    sex: "F"
+    age: 28
+    height_cm: 165
+    expected_weight_kg: 53.0
+    tolerance_kg: 4.0

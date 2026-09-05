@@ -1,0 +1,53 @@
+# Roda isso DIRETO NO ORANGE PI, não no seu desktop.
+#
+# scp esse arquivo + o config.yaml pro Pi, ajuste GHCR_IMAGE e os
+# volumes abaixo, e dá um `docker compose up -d`.
+
+services:
+  okok-scale-logger:
+    image: ghcr.io/Loviiin/okok-scale-logger:latest
+    container_name: okok-scale-logger
+    restart: unless-stopped
+
+    # network_mode host é necessário aqui: o cliente BLE do container
+    # fala com o bluetoothd do HOST via D-Bus, e algumas implementações
+    # de D-Bus/BlueZ se comportam mal atrás do NAT padrão do Docker.
+    # Se BLE funcionar sem isso no seu caso, pode tentar remover — mas
+    # teste bem antes de contar com isso em produção.
+    network_mode: host
+
+    volumes:
+      # Socket do D-Bus do sistema — é assim que o container enxerga o
+      # BlueZ do host sem precisar rodar --privileged.
+      - /var/run/dbus:/var/run/dbus
+      # Ajuste pro caminho real do seu vault do Obsidian no Pi
+      - /home/orangepi/obsidian-vault/Saude:/data/vault
+      - ./config.yaml:/data/config.yaml:ro
+
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+    environment:
+      - SCALE_MAC=A8:0B:6B:77:98:C7 # MAC da SUA balança
+      - STABILITY_COUNT=3
+
+    labels:
+      # Habilita esse container especificamente pro Watchtower vigiar.
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Se o pacote no GHCR for PRIVADO, o Watchtower precisa do mesmo
+      # login que você já fez no Docker do Pi (`docker login ghcr.io`).
+      # Descomente a linha abaixo pra ele reusar essas credenciais:
+      # - ~/.docker/config.json:/config.json
+    command:
+      - "--interval"
+      - "300" # checa a cada 5 minutos
+      - "--label-enable" # só atualiza containers com o label acima
+      - "--cleanup" # apaga a imagem antiga depois de atualizar
