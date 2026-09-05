@@ -112,32 +112,120 @@ Watchtower no Orange Pi (checando a cada 5 min)
   detecta imagem nova → pull → recria o container
 ```
 
-### Setup único (uma vez só)
+### Setup no Orange Pi
 
-1. **No repositório GitHub**: nada a configurar — o workflow usa
-   `secrets.GITHUB_TOKEN`, que já existe automaticamente.
-2. **Tornar o pacote GHCR público** (mais simples) OU configurar login:
-   - Público: vá em `github.com/users/Loviiin/packages` depois do
-     primeiro push, ache o pacote, Package settings → Change visibility
-     → Public. Assim nem o Orange Pi nem o Watchtower precisam de login.
-   - Privado: no Orange Pi, `docker login ghcr.io` uma vez com um
-     Personal Access Token (`read:packages`), e descomente a linha do
-     `~/.docker/config.json` no `docker-compose.yml` pro Watchtower usar
-     o mesmo login.
-3. **No Orange Pi**, instale Docker + Docker Compose (uma vez):
-   ```bash
-   curl -fsSL https://get.docker.com | sh
-   sudo usermod -aG docker $USER
-   # relogue pra aplicar o grupo
-   ```
-4. Copie `docker-compose.yml` e `config.yaml` pro Pi, ajuste o caminho
-   do volume do vault e o `SCALE_MAC`, e suba:
-   ```bash
-   docker compose up -d
-   ```
+Execute os comandos abaixo no Orange Pi via SSH. O exemplo assume o
+usuário `orangepi` e um Orange Pi Zero 3 com Linux ARM64.
 
-Daqui pra frente, todo `git push` na main atualiza o Pi sozinho em até 5
-minutos, sem você tocar em nada lá.
+#### 1. Conferir o sistema e instalar dependências
+
+```bash
+uname -m                         # esperado: aarch64
+sudo apt update
+sudo apt install -y bluez dbus curl ca-certificates
+sudo systemctl enable --now bluetooth
+```
+
+Instale Docker e habilite o uso sem `sudo`:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker "$USER"
+```
+
+Saia e entre novamente no SSH para o grupo Docker ser aplicado. Confirme:
+
+```bash
+docker --version
+docker compose version
+```
+
+#### 2. Preparar o vault e a configuração
+
+```bash
+mkdir -p ~/okok-scale-logger
+mkdir -p ~/obsidian-vault/Saude
+cd ~/okok-scale-logger
+```
+
+Copie `docker-compose.yml` e `config.yaml` do seu computador para essa
+pasta. No `docker-compose.yml`, confira:
+
+- `image: ghcr.io/Loviiin/bala-e-lanca:latest`;
+- o MAC em `SCALE_MAC`;
+- o caminho do vault em `/home/orangepi/obsidian-vault/Saude`.
+
+O `config.yaml` não deve ser commitado no GitHub, pois contém os dados dos
+perfis. Use `config.example.yaml` como modelo.
+
+#### 3. Testar o Bluetooth no host
+
+Antes do container, confirme que o BlueZ enxerga a balança:
+
+```bash
+sudo bluetoothctl
+power on
+scan on
+```
+
+Deixe a balança transmitindo e procure o MAC `A8:0B:6B:77:98:C7`. Para
+sair do `bluetoothctl`, execute `scan off` e `quit`.
+
+#### 4. Acessar o GHCR
+
+Se o pacote `ghcr.io/Loviiin/bala-e-lanca` for público, não precisa fazer
+login. Se for privado, crie um GitHub Personal Access Token com permissão
+`read:packages` e execute no Orange Pi:
+
+```bash
+docker login ghcr.io -u Loviiin
+```
+
+Use o token como senha. Para o Watchtower reutilizar esse login, descomente
+no `docker-compose.yml`:
+
+```yaml
+- ~/.docker/config.json:/config.json:ro
+```
+
+#### 5. Subir e acompanhar o serviço
+
+```bash
+cd ~/okok-scale-logger
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose logs -f okok-scale-logger
+```
+
+Quando uma pesagem estável for detectada, o log deve mostrar o peso e a
+gravação no vault. O Watchtower verifica uma nova imagem a cada 5 minutos.
+
+#### 6. Diagnóstico rápido
+
+```bash
+docker compose logs --tail=100 okok-scale-logger
+docker inspect okok-scale-logger
+systemctl status bluetooth --no-pager
+ls -l /var/run/dbus
+```
+
+Se o container não conseguir escrever no vault, ajuste a permissão para o
+usuário `nonroot` da imagem:
+
+```bash
+sudo chown -R 65532:65532 ~/obsidian-vault/Saude
+```
+
+Depois de qualquer atualização publicada pelo GitHub Actions, é possível
+forçar a atualização manualmente:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Normalmente o Watchtower faz isso sozinho em até 5 minutos.
 
 ---
 
