@@ -94,6 +94,10 @@ func writeAtomic(path string, data []byte) error {
 		os.Remove(tmpPath)
 		return fmt.Errorf("fechar arquivo temporário: %w", err)
 	}
+	if err := os.Chmod(tmpPath, 0o644); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("ajustar permissões do arquivo temporário: %w", err)
+	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
 		os.Remove(tmpPath)
