@@ -5,7 +5,7 @@
 
 services:
   okok-scale-logger:
-    image: ghcr.io/Loviiin/bala-e-lanca:latest
+    image: ghcr.io/loviiin/bala-e-lanca:latest
     container_name: okok-scale-logger
     restart: unless-stopped
 
@@ -16,12 +16,14 @@ services:
     # teste bem antes de contar com isso em produção.
     network_mode: host
 
+    user: "0:0"
+
     volumes:
       # Socket do D-Bus do sistema — é assim que o container enxerga o
       # BlueZ do host sem precisar rodar --privileged.
-      - /var/run/dbus:/var/run/dbus
+      - /run/dbus:/var/run/dbus
       # Ajuste pro caminho real do seu vault do Obsidian no Pi
-      - /home/orangepi/obsidian-vault/Saude:/data/vault
+      - /home/loviin/obsidian-vault/Saude:/data/vault
       - ./config.yaml:/data/config.yaml:ro
 
     cap_add:
@@ -37,9 +39,11 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
 
   watchtower:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:1.7.1
     container_name: watchtower
     restart: unless-stopped
+    environment:
+      DOCKER_API_VERSION: "1.40"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Se o pacote no GHCR for PRIVADO, o Watchtower precisa do mesmo
