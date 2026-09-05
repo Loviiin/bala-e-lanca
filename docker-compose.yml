@@ -32,7 +32,7 @@ services:
 
     environment:
       - SCALE_MAC=A8:0B:6B:77:98:C7 # MAC da SUA balança
-      - STABILITY_COUNT=1
+      - STABILITY_COUNT=3
 
     labels:
       # Habilita esse container especificamente pro Watchtower vigiar.
