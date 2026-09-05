@@ -82,7 +82,10 @@ type stabilityTracker struct {
 	lastWeight    float64
 	repeatCount   int
 	alreadyLogged bool
+	lastLoggedAt  time.Time
 }
+
+const minimumReadingInterval = time.Minute
 
 func newStabilityTracker(requiredCount int) *stabilityTracker {
 	if requiredCount < 1 {
@@ -112,7 +115,11 @@ func (s *stabilityTracker) observe(r ble.Reading) (stable bool, isNew bool) {
 
 	isStable := s.repeatCount >= s.requiredCount
 	if isStable && !s.alreadyLogged {
+		if !s.lastLoggedAt.IsZero() && time.Since(s.lastLoggedAt) < minimumReadingInterval {
+			return true, false
+		}
 		s.alreadyLogged = true
+		s.lastLoggedAt = time.Now()
 		return true, true
 	}
 	return isStable, false
