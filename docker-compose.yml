@@ -58,3 +58,17 @@ services:
       - "--scope"
       - "bala-e-lanca"
       - "--cleanup" # apaga a imagem antiga depois de atualizar
+
+  obsidian-livesync-bridge:
+    image: node:22-alpine
+    container_name: obsidian-livesync-bridge
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env.livesync
+    volumes:
+      - /home/loviin/obsidian-vault:/vault
+    command:
+      - sh
+      - -c
+      - npx --yes obsidian-git-livesync watch /vault

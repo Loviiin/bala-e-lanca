@@ -190,12 +190,24 @@ no `docker-compose.yml`:
 
 #### 5. Subir e acompanhar o serviço
 
+Crie o arquivo local de credenciais do bridge (ele não deve ser commitado):
+
+```bash
+cp .env.livesync.example .env.livesync
+nano .env.livesync
+```
+
+Preencha `COUCHDB_PASSWORD` com a senha atual do CouchDB. O bridge observa
+`/home/loviin/obsidian-vault` e envia os Markdown para a base
+`obsidian-livesync`, sem precisar rodar o Obsidian no Orange Pi.
+
 ```bash
 cd ~/okok-scale-logger
 docker compose pull
 docker compose up -d
 docker compose ps
 docker compose logs -f okok-scale-logger
+docker compose logs -f obsidian-livesync-bridge
 ```
 
 Quando uma pesagem estável for detectada, o log deve mostrar o peso e a
