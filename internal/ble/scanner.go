@@ -3,16 +3,14 @@ package ble
 import (
 	"fmt"
 	"log"
-	"sync"
 
 	"tinygo.org/x/bluetooth"
 )
 
 // Scanner escaneia advertisements BLE e filtra só os da balança configurada.
 type Scanner struct {
-	adapter       *bluetooth.Adapter
-	targetAddr    string // MAC da balança, ex: "A8:0B:6B:77:98:C7"
-	duplicateOnce sync.Once
+	adapter    *bluetooth.Adapter
+	targetAddr string // MAC da balança, ex: "A8:0B:6B:77:98:C7"
 }
 
 func NewScanner(targetAddr string) *Scanner {
@@ -33,12 +31,6 @@ func (s *Scanner) Start(onReading func(Reading)) error {
 	log.Printf("escaneando, filtrando por %s...", s.targetAddr)
 
 	return s.adapter.Scan(func(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
-		s.duplicateOnce.Do(func() {
-			if err := enableDuplicateData(); err != nil {
-				log.Printf("não foi possível habilitar anúncios duplicados: %v", err)
-			}
-		})
-
 		if device.Address.String() != s.targetAddr {
 			return
 		}
