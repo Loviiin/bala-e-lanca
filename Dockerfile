@@ -4,7 +4,7 @@
 # Cross-compila um binário estático. Sem CGO, o binário final não
 # depende de nenhuma lib do sistema além do que o D-Bus/BlueZ já provê
 # via socket (que é montado em runtime, não linkado).
-FROM golang:1.23-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 
 WORKDIR /src
 
