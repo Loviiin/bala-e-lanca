@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Loviiin/okok-scale-logger/internal/bia"
@@ -37,6 +39,26 @@ func main() {
 	writer := obsidian.NewWriter(vaultDir)
 	tracker := newStabilityTracker(stabilityCount)
 
+	// LiveSync: escreve direto no CouchDB se as variáveis estiverem configuradas.
+	// Isso elimina a necessidade do container obsidian-livesync-bridge.
+	var lsWriter *obsidian.LiveSyncWriter
+	if couchURL := os.Getenv("COUCHDB_URL"); couchURL != "" {
+		lsCfg := obsidian.LiveSyncConfig{
+			URL:      couchURL,
+			Database: envOr("COUCHDB_DATABASE", "obsidian-livesync"),
+			Username: os.Getenv("COUCHDB_USER"),
+			Password: os.Getenv("COUCHDB_PASSWORD"),
+		}
+		lsWriter = obsidian.NewLiveSyncWriter(lsCfg)
+
+		if err := lsWriter.Ping(); err != nil {
+			log.Fatalf("não conseguiu conectar no CouchDB: %v", err)
+		}
+		log.Printf("LiveSync: conectado em %s/%s", lsCfg.URL, lsCfg.Database)
+	} else {
+		log.Print("AVISO: COUCHDB_URL não configurada — gravando apenas no filesystem local")
+	}
+
 	scanner := ble.NewScanner(scaleMAC)
 
 	err = scanner.Start(func(r ble.Reading) {
@@ -65,8 +87,34 @@ func main() {
 			Profile:      *p,
 		})
 
-		if err := writer.AppendReading(p.Name, time.Now(), r.WeightKg, metrics); err != nil {
-			log.Printf("ERRO ao gravar no vault: %v", err)
+		now := time.Now()
+
+		if err := writer.AppendReading(p.Name, now, r.WeightKg, metrics); err != nil {
+			log.Printf("ERRO ao gravar no filesystem: %v", err)
+		}
+
+		// Escrever no CouchDB/LiveSync se configurado
+		if lsWriter != nil {
+			// Montar o conteúdo completo do arquivo (header + todas as linhas)
+			// pra enviar como documento único ao CouchDB.
+			mdPath := writer.PathFor(p.Name, now)
+			mdContent, readErr := os.ReadFile(mdPath)
+			if readErr != nil {
+				log.Printf("ERRO ao ler arquivo para LiveSync: %v", readErr)
+			} else {
+				// docPath relativo ao vault, ex: "Saude/Loviin/2026-09.md"
+				relPath, _ := filepath.Rel(vaultDir, mdPath)
+				// Normalizar separadores para / (CouchDB/LiveSync usa /)
+				docPath := strings.ReplaceAll(relPath, "\\", "/")
+				// Obsidian LiveSync não usa / no início
+				docPath = strings.TrimPrefix(docPath, "/")
+
+				if err := lsWriter.WriteFile(docPath, string(mdContent)); err != nil {
+					log.Printf("ERRO ao gravar no LiveSync: %v", err)
+				} else {
+					log.Printf("LiveSync: %s atualizado no CouchDB", docPath)
+				}
+			}
 		}
 	})
 	if err != nil {

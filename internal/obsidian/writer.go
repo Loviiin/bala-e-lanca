@@ -22,10 +22,10 @@ func NewWriter(vaultDir string) *Writer {
 	return &Writer{VaultDir: vaultDir}
 }
 
-// pathFor monta o caminho tipo "<vault>/<pessoa>/2026-09.md" — um arquivo
+// PathFor monta o caminho tipo "<vault>/<pessoa>/2026-09.md" — um arquivo
 // por pessoa por mês, evitando um único arquivo gigante que deixa o
 // Dataview lento com o tempo.
-func (w *Writer) pathFor(personName string, t time.Time) string {
+func (w *Writer) PathFor(personName string, t time.Time) string {
 	dir := filepath.Join(w.VaultDir, sanitize(personName))
 	filename := t.Format("2006-01") + ".md"
 	return filepath.Join(dir, filename)
@@ -42,7 +42,7 @@ const header = `| data | peso (kg) | imc | %gordura | %água | massa magra (kg) 
 // AppendReading adiciona uma linha na tabela do mês da pessoa, criando o
 // arquivo (com header) se ainda não existir.
 func (w *Writer) AppendReading(personName string, t time.Time, weightKg float64, m bia.Metrics) error {
-	path := w.pathFor(personName, t)
+	path := w.PathFor(personName, t)
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("criar diretório: %w", err)

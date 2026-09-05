@@ -33,6 +33,8 @@ services:
     environment:
       - SCALE_MAC=A8:0B:6B:77:98:C7 # MAC da SUA balança
       - STABILITY_COUNT=3
+    env_file:
+      - .env.livesync  # COUCHDB_URL, COUCHDB_USER, COUCHDB_PASSWORD, COUCHDB_DATABASE
 
     labels:
       # Habilita esse container especificamente pro Watchtower vigiar.
@@ -58,23 +60,3 @@ services:
       - "--scope"
       - "bala-e-lanca"
       - "--cleanup" # apaga a imagem antiga depois de atualizar
-
-  obsidian-livesync-bridge:
-    image: node:22-alpine
-    container_name: obsidian-livesync-bridge
-    restart: unless-stopped
-    network_mode: host
-    env_file:
-      - .env.livesync
-    volumes:
-      - /home/loviin/obsidian-vault:/vault
-    command: >-
-      sh -c 'node -e "require(\"fs\").writeFileSync(\"/tmp/livesync.json\", JSON.stringify({
-      couchdbUrl: process.env.COUCHDB_URL,
-      couchdbUser: process.env.COUCHDB_USER,
-      couchdbPassword: process.env.COUCHDB_PASSWORD,
-      couchdbDatabase: process.env.COUCHDB_DATABASE,
-      vaultRoot: process.env.VAULT_ROOT,
-      extensions: [\".md\"],
-      debounce: 200
-      }))" && npx --yes obsidian-git-livesync --config /tmp/livesync.json watch /vault'
