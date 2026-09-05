@@ -64,8 +64,8 @@ go test ./internal/bia/... -v
 ## 2. Primeira configuração
 
 ```bash
-git clone https://github.com/Loviiin/okok-scale-logger.git
-cd okok-scale-logger
+git clone https://github.com/Loviiin/bala-e-lanca.git
+cd bala-e-lanca
 
 # gera o go.sum (precisa de internet liberada pro proxy do Go)
 go mod tidy
@@ -105,7 +105,7 @@ GitHub Actions (.github/workflows/build.yml)
   builda multi-arch (linux/arm64) via QEMU+buildx
       │
       ▼
-push automático pra ghcr.io/Loviiin/okok-scale-logger:latest
+push automático pra ghcr.io/Loviiin/bala-e-lanca:latest
       │
       ▼
 Watchtower no Orange Pi (checando a cada 5 min)

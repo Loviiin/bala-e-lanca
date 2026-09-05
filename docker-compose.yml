@@ -5,7 +5,7 @@
 
 services:
   okok-scale-logger:
-    image: ghcr.io/Loviiin/okok-scale-logger:latest
+    image: ghcr.io/Loviiin/bala-e-lanca:latest
     container_name: okok-scale-logger
     restart: unless-stopped
 
