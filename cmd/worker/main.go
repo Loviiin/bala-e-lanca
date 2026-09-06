@@ -109,7 +109,7 @@ func main() {
 
 		now := time.Now()
 
-		if err := writer.AppendReading(p.Name, now, r.WeightKg, metrics); err != nil {
+		if err := writer.AppendReading(p.Name, now, r.WeightKg, metrics, r.HasImpedance); err != nil {
 			log.Printf("ERRO ao gravar no filesystem: %v", err)
 		}
 

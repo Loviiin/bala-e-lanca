@@ -17,10 +17,10 @@ func TestAppendReadingWritesAtomicallyAndAppends(t *testing.T) {
 	secondTime := firstTime.Add(10 * time.Minute)
 	metrics := bia.Metrics{BMI: 24.5, BodyFatPercent: 18.2, BodyWaterPercent: 58.1, FatFreeMassKg: 67.3, SkeletalMuscleKg: 31.4, BMRKcal: 1680}
 
-	if err := writer.AppendReading("Pessoa/Teste", firstTime, 82.4, metrics); err != nil {
+	if err := writer.AppendReading("Pessoa/Teste", firstTime, 82.4, metrics, true); err != nil {
 		t.Fatalf("primeira gravação: %v", err)
 	}
-	if err := writer.AppendReading("Pessoa/Teste", secondTime, 82.1, metrics); err != nil {
+	if err := writer.AppendReading("Pessoa/Teste", secondTime, 82.1, metrics, true); err != nil {
 		t.Fatalf("segunda gravação: %v", err)
 	}
 

@@ -35,13 +35,22 @@ func sanitize(name string) string {
 	return strings.ReplaceAll(name, "/", "-")
 }
 
-const header = `| data | peso (kg) | imc | %gordura | %água | massa magra (kg) | músculo esquelético (kg) | bmr (kcal) |
+func getHeader(personName string, t time.Time) string {
+	return fmt.Sprintf(`---
+type: pesagens
+person: %s
+month: %s
+---
+# Leituras de %s - %s
+
+| data | peso (kg) | imc | %%gordura | %%água | massa magra (kg) | músculo esquelético (kg) | bmr (kcal) |
 |---|---|---|---|---|---|---|---|
-`
+`, personName, t.Format("2006-01"), personName, t.Format("2006-01"))
+}
 
 // AppendReading adiciona uma linha na tabela do mês da pessoa, criando o
-// arquivo (com header) se ainda não existir.
-func (w *Writer) AppendReading(personName string, t time.Time, weightKg float64, m bia.Metrics) error {
+// arquivo (com header e frontmatter) se ainda não existir.
+func (w *Writer) AppendReading(personName string, t time.Time, weightKg float64, m bia.Metrics, hasImpedance bool) error {
 	path := w.PathFor(personName, t)
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -53,20 +62,33 @@ func (w *Writer) AppendReading(personName string, t time.Time, weightKg float64,
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("ler arquivo existente: %w", err)
 		}
-		existing = []byte(header)
+		existing = []byte(getHeader(personName, t))
 	}
 
-	row := fmt.Sprintf(
-		"| %s | %.2f | %.1f | %.1f | %.1f | %.2f | %.2f | %.0f |\n",
-		t.Format("2006-01-02 15:04"),
-		weightKg,
-		m.BMI,
-		m.BodyFatPercent,
-		m.BodyWaterPercent,
-		m.FatFreeMassKg,
-		m.SkeletalMuscleKg,
-		m.BMRKcal,
-	)
+	var row string
+	if hasImpedance {
+		row = fmt.Sprintf(
+			"| %s | %.2f | %.1f | %.1f | %.1f | %.2f | %.2f | %.0f |\n",
+			t.Format("2006-01-02 15:04"),
+			weightKg,
+			m.BMI,
+			m.BodyFatPercent,
+			m.BodyWaterPercent,
+			m.FatFreeMassKg,
+			m.SkeletalMuscleKg,
+			m.BMRKcal,
+		)
+	} else {
+		// Sem impedância, as estimativas de composição quebram (geram números absurdos
+		// ou negativos). Mostra só o peso e métricas baseadas apenas em altura/peso.
+		row = fmt.Sprintf(
+			"| %s | %.2f | %.1f | - | - | - | - | %.0f |\n",
+			t.Format("2006-01-02 15:04"),
+			weightKg,
+			m.BMI,
+			m.BMRKcal,
+		)
+	}
 
 	newContent := append(existing, []byte(row)...)
 
