@@ -33,6 +33,7 @@ services:
     environment:
       - SCALE_MAC=A8:0B:6B:77:98:C7 # MAC da SUA balança
       - STABILITY_COUNT=3
+      # - DEBUG_BLE=1 # Descomente para ver TODOS os pacotes BLE lidos no log
     env_file:
       - .env.livesync  # COUCHDB_URL, COUCHDB_USER, COUCHDB_PASSWORD, COUCHDB_DATABASE
 

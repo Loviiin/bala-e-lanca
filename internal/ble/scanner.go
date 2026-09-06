@@ -3,6 +3,8 @@ package ble
 import (
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"tinygo.org/x/bluetooth"
 )
@@ -30,8 +32,17 @@ func (s *Scanner) Start(onReading func(Reading)) error {
 
 	log.Printf("escaneando, filtrando por %s...", s.targetAddr)
 
+	debugBLE := os.Getenv("DEBUG_BLE") == "1"
+
 	return s.adapter.Scan(func(adapter *bluetooth.Adapter, device bluetooth.ScanResult) {
-		if device.Address.String() != s.targetAddr {
+		mac := device.Address.String()
+
+		if debugBLE {
+			log.Printf("[DEBUG BLE] Visto: %s (RSSI: %d)", mac, device.RSSI)
+		}
+
+		// Case-insensitive match no MAC
+		if !strings.EqualFold(mac, s.targetAddr) {
 			return
 		}
 
