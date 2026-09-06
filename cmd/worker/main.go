@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -72,8 +73,27 @@ func main() {
 
 		p := profile.Identify(cfg.Profiles, r.WeightKg)
 		if p == nil {
-			log.Printf("ATENÇÃO: nenhum perfil bateu com %.2f kg — gravando como 'nao-identificado'", r.WeightKg)
-			p = &profile.Profile{Name: "nao-identificado", Height: 170, Age: 30, Sex: profile.Male}
+			// Descobrir qual o próximo número de visitante (1, 2, 3...)
+			count := 1
+			for _, existing := range cfg.Profiles {
+				if strings.HasPrefix(existing.Name, "nao-identificado-") {
+					count++
+				}
+			}
+			
+			newName := fmt.Sprintf("nao-identificado-%d", count)
+			log.Printf("ATENÇÃO: nenhum perfil bateu com %.2f kg — criando perfil temporário '%s'", r.WeightKg, newName)
+			
+			newProfile := profile.Profile{
+				Name:             newName,
+				ExpectedWeightKg: r.WeightKg,
+				ToleranceKg:      4.0, // Aceita variação de +- 4kg para a mesma pessoa desconhecida
+				Height:           170,
+				Age:              30,
+				Sex:              profile.Male,
+			}
+			cfg.Profiles = append(cfg.Profiles, newProfile)
+			p = &cfg.Profiles[len(cfg.Profiles)-1]
 		}
 
 		impedance := r.ImpedanceOhm
